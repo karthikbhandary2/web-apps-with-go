@@ -6,23 +6,49 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+
+	"github.com/karthikbhandary2/bwa/pkg/config"
+	"github.com/karthikbhandary2/bwa/pkg/models"
 )
 
-func RenderTemplate(w http.ResponseWriter, tmpl string) {
-	// create a template cache
-	tc, err := CreateTemplateCache()
-	if err != nil {
-		log.Fatal(err)
+
+var functions = template.FuncMap {
+
+}
+
+var app *config.AppConfig
+
+// NewTemplates sets the config for the template package
+func NewTemplates(a *config.AppConfig){
+	app = a
+}
+
+func AddDefaultData(td *models.TemplateData) *models.TemplateData {
+	
+	return td
+}
+
+func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData) {
+	var tc map[string]*template.Template
+	if app.UseCache{
+		tc = app.TemplateCache
+	}else{
+		tc, _ = CreateTemplateCache()
 	}
+	
+	// create a template cache
 
 	//get requested template from cache
 	t, ok := tc[tmpl]
 	if !ok {
-		log.Fatal(err)
+		log.Fatal("could not get template from template cache")
 	}
 
 	buf := new(bytes.Buffer)
-	err = t.Execute(buf, nil)
+
+	td = AddDefaultData(td)
+	_ = t.Execute(buf, td)
+	_, err := buf.WriteTo(w)
 	if err != nil {
 		log.Println(err)
 	}
@@ -33,10 +59,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string) {
 	// 	fmt.Println(err)
 	// 	return
 	// }
-	_, err = buf.WriteTo(w)
-	if err != nil {
-		log.Println(err)
-	}
+	
 }
 
 func CreateTemplateCache() (map[string]*template.Template, error) {
