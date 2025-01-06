@@ -4,15 +4,31 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/karthikbhandary2/bwa/pkg/config"
 	"github.com/karthikbhandary2/bwa/pkg/handlers"
 	"github.com/karthikbhandary2/bwa/pkg/render"
 )
 
 const portNumber = ":8080"
-
+var app config.AppConfig
+var session *scs.SessionManager
 func main() {
+
+	
+
+	app.InProduction = false
+
+	session = scs.New()
+	session.Lifetime = 24 * time.Hour
+	session.Cookie.Persist = true
+	session.Cookie.SameSite = http.SameSiteLaxMode
+	session.Cookie.Secure = app.InProduction
+
+	app.Session = session
+	
 	var app config.AppConfig
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
